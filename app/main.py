@@ -33,7 +33,11 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 STATIC_DIR = os.path.join(BASE_DIR, "static")
 
 if not os.path.exists(STATIC_DIR):
-    os.makedirs(STATIC_DIR, exist_ok=True)
+    try:
+        os.makedirs(STATIC_DIR, exist_ok=True)
+    except OSError:
+        # Read-only filesystem (e.g. Vercel serverless); static assets are bundled.
+        pass
 
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 

@@ -89,7 +89,28 @@ http://127.0.0.1:8000
 
 ---
 
-## 📊 Scoring Model Summary
+## ▲ Deploy to Vercel
+
+The app ships ready for Vercel's Python serverless runtime. The FastAPI app (API + static HTML/CSS) is served from a single function.
+
+1. Push this repository to GitHub (or GitLab/Bitbucket).
+2. In Vercel, **Add New → Project** and import the repo. No build command or framework preset is needed — `vercel.json` configures everything.
+3. Deploy. Vercel installs `requirements.txt`, bundles `static/**` and `tokens.css`, and routes every request to `api/index.py`.
+
+Or deploy from the CLI:
+
+```bash
+npm i -g vercel
+vercel          # preview deployment
+vercel --prod   # production deployment
+```
+
+Notes:
+- `api/index.py` exposes the ASGI `app` and `vercel.json` rewrites all paths to it, so `/`, `/static/*`, `/tokens.css`, and `/api/*` all work.
+- Serverless filesystems are read-only except `/tmp`. The SQLite cache automatically writes to `/tmp/mutual_fund_cache.db` on Vercel (detected via the `VERCEL` env var), or set `CACHE_DB_PATH` to override. Because `/tmp` is ephemeral and per-instance, the cache is best-effort; first requests re-fetch live data.
+
+---
+
 
 | Factor | Weight | Max Points | Key Criteria |
 | :--- | :---: | :---: | :--- |

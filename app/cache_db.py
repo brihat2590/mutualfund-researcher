@@ -8,7 +8,19 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-DB_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "mutual_fund_cache.db")
+
+def _default_db_path() -> str:
+    # Allow explicit override, otherwise use the writable /tmp dir on Vercel
+    # (the project filesystem is read-only in serverless functions).
+    override = os.environ.get("CACHE_DB_PATH")
+    if override:
+        return override
+    if os.environ.get("VERCEL"):
+        return "/tmp/mutual_fund_cache.db"
+    return os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "mutual_fund_cache.db")
+
+
+DB_PATH = _default_db_path()
 
 class CacheDB:
     def __init__(self, db_path: str = DB_PATH):
