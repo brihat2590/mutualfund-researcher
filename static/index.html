@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="dark">
+    <title>Mutual Fund Quantitative Researcher | 5-Year Rolling Return Screener</title>
+    <link rel="stylesheet" href="/static/css/style.css?v=1.1">
+    <link rel="stylesheet" href="/static/css/research.css?v=4">
+    <!-- Chart.js for rolling return charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <a class="skip-link" href="#researchWorkspace">Skip to research</a>
+    <div class="container" id="pageContent">
+        <!-- Top Navigation / Header -->
+        <header class="header-wrapper">
+            <div class="brand-title">
+                <span class="brand-mark" aria-hidden="true">mf/</span>
+                <div>
+                    <p class="brand-name">Mutual Fund Researcher</p>
+                    <p class="brand-subtitle">Quantitative research</p>
+                </div>
+            </div>
+            <a class="header-link" href="#methodology">Methodology ↗</a>
+        </header>
+
+        <main id="researchWorkspace" tabindex="-1">
+        <section class="intro" aria-labelledby="pageTitle">
+            <div>
+                <h1 id="pageTitle">Look beyond trailing returns.</h1>
+                <p class="intro-copy">Compare Indian mutual funds across market cycles. Weigh rolling returns, consistency and cost before looking at the rank.</p>
+            </div>
+            <dl class="research-basis" aria-label="Research criteria">
+                <div><dt>Minimum history</dt><dd>9+ years</dd></div>
+                <div><dt>Rolling window</dt><dd>5 years</dd></div>
+                <div><dt>Rating scale</dt><dd>10 points</dd></div>
+            </dl>
+        </section>
+
+        <div class="research-layout">
+        <!-- Search & Configuration Panel -->
+        <aside class="control-card" aria-labelledby="controlsTitle">
+            <h2 class="control-heading" id="controlsTitle">Research a category</h2>
+            <div class="search-form-row">
+                <div class="form-group">
+                    <label class="form-label" for="categoryInput">Fund category</label>
+                    <div class="input-with-button">
+                        <input 
+                            type="text" 
+                            id="categoryInput" 
+                            class="form-input" 
+                            list="subcategoriesList" 
+                            value="Flexi Cap Fund"
+                            placeholder="e.g. Flexi Cap Fund"
+                            aria-describedby="categoryHelp"
+                        >
+                        <datalist id="subcategoriesList"></datalist>
+                    </div>
+                </div>
+
+                <div class="search-actions">
+                    <label class="refresh-toggle-label" title="Fetch live from Dhan and recompute rolling returns">
+                        <input type="checkbox" id="forceRefresh">
+                        <span>Refresh live data</span>
+                    </label>
+
+                    <button id="searchBtn" class="btn-primary">
+                        <span id="btnText">Analyze category</span>
+                        <span id="btnIcon" aria-hidden="true">↗</span>
+                    </button>
+                </div>
+            </div>
+            <p id="categoryHelp" class="search-note">Uses cached research when available. Live refresh recalculates daily NAV history.</p>
+
+            <!-- Quick Category Selection Chips -->
+            <div class="preset-chips-container">
+                <span class="preset-chip-label">Browse categories</span>
+                <button type="button" class="preset-chip active" data-cat="Flexi Cap Fund" aria-pressed="true">Flexi Cap Fund</button>
+                <button type="button" class="preset-chip" data-cat="Large Cap Fund">Large Cap Fund</button>
+                <button type="button" class="preset-chip" data-cat="Mid Cap Fund">Mid Cap Fund</button>
+                <button type="button" class="preset-chip" data-cat="Small Cap Fund">Small Cap Fund</button>
+                <button type="button" class="preset-chip" data-cat="Large & Mid Cap Fund">Large & Mid Cap</button>
+                <button type="button" class="preset-chip" data-cat="ELSS - Tax Saver Fund">ELSS (Tax Saver)</button>
+                <button type="button" class="preset-chip" data-cat="Multi Cap Fund">Multi Cap Fund</button>
+                <button type="button" class="preset-chip" data-cat="Focused Fund">Focused Fund</button>
+                <button type="button" class="preset-chip" data-cat="Value Fund">Value Fund</button>
+            </div>
+        </aside>
+
+        <div class="research-results" id="researchResults" aria-busy="false">
+        <div class="results-heading">
+            <h2 id="resultsTitle">Flexi Cap Fund</h2>
+            <span id="resultCount" class="result-count" role="status" aria-live="polite"></span>
+        </div>
+        <div id="summaryStatus" class="summary-status" hidden>
+            <span id="kpiCacheStatus" class="cache-status"></span>
+            <span id="kpiCacheTime"></span>
+        </div>
+        <!-- Category Overview KPIs -->
+        <section id="kpiSection" class="kpi-grid" style="display: none;" aria-label="Category summary">
+            <div class="kpi-card">
+                <div class="kpi-title">Eligible funds</div>
+                <div class="kpi-value" id="kpiQualifying">—</div>
+                <div class="kpi-subtext">At least 9 years of history</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-title">Highest rating</div>
+                <div class="kpi-value" id="kpiTopRating">—</div>
+                <div class="kpi-subtext" id="kpiTopFund">Awaiting research</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-title">Average rolling return</div>
+                <div class="kpi-value" id="kpiAvgRolling">—</div>
+                <div class="kpi-subtext">5-year annualized CAGR</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-title">Average expense ratio</div>
+                <div class="kpi-value" id="kpiAvgTer">—</div>
+                <div class="kpi-subtext">Annual fund cost (TER)</div>
+            </div>
+        </section>
+
+        <!-- Loading State Indicator -->
+        <div id="loadingOverlay" class="loading-overlay" role="status" aria-live="polite">
+            <div class="loading-spinner" aria-hidden="true"></div>
+            <h3 id="loadingTitle">Analyzing rolling returns…</h3>
+            <p id="loadingDesc">
+                Fetching daily NAV history and calculating 5-year rolling returns. Live research can take a few minutes.
+            </p>
+        </div>
+        <div id="errorState" class="error-state" role="alert" hidden>
+            <h3>Research could not be loaded</h3>
+            <p id="errorMessage"></p>
+            <button id="retryBtn" class="btn-secondary" type="button">Retry research</button>
+        </div>
+
+        <!-- Table Toolbar & Filter -->
+        <section id="tableSection" style="display: none;">
+            <div class="table-toolbar">
+                <div class="filter-group">
+                <label for="tableFilterInput">Filter results</label>
+                <input 
+                    type="text" 
+                    id="tableFilterInput" 
+                    class="table-search-input" 
+                    placeholder="Fund, AMC or manager"
+                >
+                </div>
+
+                <div class="table-sort-group">
+                    <div class="sort-field">
+                    <label class="table-sort-label" for="tableSortSelect">Sort by</label>
+                    <select id="tableSortSelect" class="table-select">
+                        <option value="rating_desc">Rating: high to low</option>
+                        <option value="rolling_mean_desc">Rolling average: high to low</option>
+                        <option value="rolling_min_desc">Worst period: high to low</option>
+                        <option value="ter_asc">Expense ratio: low to high</option>
+                        <option value="aum_desc">AUM: high to low</option>
+                        <option value="pre_5y_desc">Trailing return: high to low</option>
+                    </select>
+                    </div>
+
+                    <button id="exportCsvBtn" class="btn-inspect">
+                        Export CSV ↓
+                    </button>
+                </div>
+            </div>
+
+            <!-- Main Results Data Table -->
+            <div class="table-container">
+                <div class="table-responsive" tabindex="0" role="region" aria-label="Fund comparison, scroll horizontally for all metrics">
+                    <table class="mf-table" id="fundsTable">
+                        <caption class="sr-only">Mutual fund comparison. All returns are percentages; AUM is in Indian rupee crores.</caption>
+                        <thead>
+                            <tr>
+                                <th scope="col">Rank</th>
+                                <th scope="col">Rating / 10</th>
+                                <th scope="col">Scheme &amp; AMC</th>
+                                <th scope="col">Inception</th>
+                                <th scope="col">AUM (₹ Cr)</th>
+                                <th scope="col">TER</th>
+                                <th scope="col">5Y avg.</th>
+                                <th scope="col">5Y median</th>
+                                <th scope="col">Volatility</th>
+                                <th scope="col">5Y trailing</th>
+                                <th scope="col">Min. SIP</th>
+                                <th scope="col">Details</th>
+                            </tr>
+                        </thead>
+                        <tbody id="fundsTableBody">
+                            <!-- Populated dynamically via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <p class="table-note">Select a fund for returns, rating breakdown and its investment calculator. Scroll across for all metrics.</p>
+        </section>
+
+        <!-- Empty State View -->
+        <div id="emptyState" class="empty-state" style="display: none;">
+            <h3>No eligible funds in this category</h3>
+            <p>
+                No funds met the requirement of at least 9 years of history with daily NAV data. Choose another category to compare.
+            </p>
+            <button id="chooseCategoryBtn" class="btn-secondary" type="button">Choose a category</button>
+        </div>
+        </div>
+        </div>
+        <details class="methodology" id="methodology">
+            <summary>How to read this research</summary>
+            <div class="methodology-copy">
+                <div>
+                    <h3>A window, not a single date</h3>
+                    <p>Each rolling observation measures the annualized return of a five-year holding period. The average, median and volatility describe how outcomes varied across entry dates.</p>
+                </div>
+                <div>
+                    <h3>A rating, not a recommendation</h3>
+                    <p>The score combines rolling performance, expenses, consistency, AUM and trailing returns. Open a fund's scorecard for the factor weights. Minimum SIP is shown for reference, not scored.</p>
+                </div>
+            </div>
+        </details>
+        </main>
+        <footer class="page-footer">
+            <span>Data source: Dhan · Amounts in INR</span>
+            <p>For research, not investment advice. Past returns do not guarantee future results.</p>
+        </footer>
+    </div>
+
+    <!-- MODAL WINDOW SYSTEM -->
+    <!-- Non-closable by clicking outside backdrop; Only closable via dedicated close button -->
+    <div id="fundModal" class="modal-backdrop">
+        <div class="modal-dialog" id="modalDialog" role="dialog" aria-modal="true" aria-labelledby="modalFundName" aria-describedby="modalCloseHint">
+            <!-- Modal Header -->
+            <div class="modal-header">
+                <div class="modal-title-group">
+                    <div class="modal-badges">
+                        <span id="modalRatingBadge" class="rating-badge">—</span>
+                        <span id="modalTierLabel" class="badge badge-success"></span>
+                        <span id="modalInceptionBadge" class="badge badge-info"></span>
+                    </div>
+                    <h2 id="modalFundName">Fund analysis</h2>
+                    <p id="modalSubcategoryAndAmc"></p>
+                </div>
+                <!-- Dedicated Close Button -->
+                <button id="modalCloseBtnTop" class="btn-close-modal" aria-label="Close fund analysis">✕</button>
+            </div>
+
+            <!-- Modal Content Body -->
+            <div class="modal-body">
+                <!-- Key Quick Metrics Grid -->
+                <div class="modal-stats-grid">
+                    <div class="modal-stat-box">
+                        <div class="modal-stat-label">AUM</div>
+                        <div class="modal-stat-val" id="modalAum">—</div>
+                    </div>
+                    <div class="modal-stat-box">
+                        <div class="modal-stat-label">Expense Ratio (TER)</div>
+                        <div class="modal-stat-val" id="modalTer">—</div>
+                    </div>
+                    <div class="modal-stat-box">
+                        <div class="modal-stat-label">Min SIP Amount</div>
+                        <div class="modal-stat-val" id="modalMinSip">—</div>
+                    </div>
+                    <div class="modal-stat-box">
+                        <div class="modal-stat-label">Benchmark</div>
+                        <div class="modal-stat-val stat-text" id="modalBenchmark">—</div>
+                    </div>
+                    <div class="modal-stat-box">
+                        <div class="modal-stat-label">Fund Manager</div>
+                        <div class="modal-stat-val stat-text" id="modalManager">—</div>
+                    </div>
+                    <div class="modal-stat-box">
+                        <div class="modal-stat-label">Latest NAV</div>
+                        <div class="modal-stat-val" id="modalNav">—</div>
+                    </div>
+                </div>
+
+                <!-- Navigation Tabs Inside Modal -->
+                <div class="modal-tabs" role="tablist" aria-label="Fund analysis views">
+                    <button class="modal-tab-btn active" id="returnsTab" data-tab="tab-returns" role="tab" aria-selected="true" aria-controls="tab-returns">Returns</button>
+                    <button class="modal-tab-btn" id="chartTab" data-tab="tab-chart" role="tab" aria-selected="false" aria-controls="tab-chart" tabindex="-1">Rolling chart</button>
+                    <button class="modal-tab-btn" id="scorecardTab" data-tab="tab-scorecard" role="tab" aria-selected="false" aria-controls="tab-scorecard" tabindex="-1">Scorecard</button>
+                    <button class="modal-tab-btn" id="calculatorTab" data-tab="tab-calculator" role="tab" aria-selected="false" aria-controls="tab-calculator" tabindex="-1">Calculator</button>
+                </div>
+
+                <!-- Tab 1: Tabular Returns (Precalculated vs 5Y Rolling) -->
+                <div id="tab-returns" class="tab-pane active" role="tabpanel" aria-labelledby="returnsTab">
+                    <div class="returns-compare-grid">
+                        <!-- Table 1: Precalculated Trailing Returns from Dhan API -->
+                        <div class="compare-card">
+                            <div class="compare-card-header">
+                                <span>Trailing returns</span>
+                                <span class="badge badge-info">Point-to-point</span>
+                            </div>
+                            <table class="mini-table">
+                                <thead>
+                                    <tr>
+                                        <th>Horizon</th>
+                                        <th>CAGR / Return</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>1 Month Return</td>
+                                        <td class="stat-numeric" id="ret1m">--</td>
+                                    </tr>
+                                    <tr>
+                                        <td>3 Month Return</td>
+                                        <td class="stat-numeric" id="ret3m">--</td>
+                                    </tr>
+                                    <tr>
+                                        <td>6 Month Return</td>
+                                        <td class="stat-numeric" id="ret6m">--</td>
+                                    </tr>
+                                    <tr>
+                                        <td>1 Year CAGR Return</td>
+                                        <td class="stat-numeric" id="ret1y">--</td>
+                                    </tr>
+                                    <tr>
+                                        <td>3 Year CAGR Return</td>
+                                        <td class="stat-numeric" id="ret3y">--</td>
+                                    </tr>
+                                    <tr>
+                                        <td>5 Year CAGR Return</td>
+                                        <td class="stat-numeric text-positive" id="ret5y">--</td>
+                                    </tr>
+                                    <tr>
+                                        <td>3 Year Absolute Return</td>
+                                        <td class="stat-numeric" id="ret3yAbs">--</td>
+                                    </tr>
+                                    <tr>
+                                        <td>5 Year Absolute Return</td>
+                                        <td class="stat-numeric" id="ret5yAbs">--</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Table 2: 5-Year Rolling Returns Distribution -->
+                        <div class="compare-card">
+                            <div class="compare-card-header">
+                                <span>5-year rolling returns</span>
+                                <span class="badge badge-success">Across entry dates</span>
+                            </div>
+                            <table class="mini-table">
+                                <thead>
+                                    <tr>
+                                        <th>5-Year Rolling Metric</th>
+                                        <th>Value</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>5Y Rolling Average (CAGR)</td>
+                                        <td class="stat-numeric text-positive" id="rollMean">--</td>
+                                    </tr>
+                                    <tr>
+                                        <td>5Y Rolling Median (CAGR)</td>
+                                        <td class="stat-numeric" id="rollMedian">--</td>
+                                    </tr>
+                                    <tr>
+                                        <td>5Y Rolling Worst Period (Min CAGR)</td>
+                                        <td class="stat-numeric" id="rollMin">--</td>
+                                    </tr>
+                                    <tr>
+                                        <td>5Y Rolling Best Period (Max CAGR)</td>
+                                        <td class="stat-numeric" id="rollMax">--</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Rolling Volatility (Std Dev)</td>
+                                        <td class="stat-numeric" id="rollStd">--</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Probability of Return > 10% CAGR</td>
+                                        <td class="stat-numeric" id="rollP10">--</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Probability of Return > 12% CAGR</td>
+                                        <td class="stat-numeric text-positive" id="rollP12">--</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Probability of Return > 15% CAGR</td>
+                                        <td class="stat-numeric" id="rollP15">--</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Negative Periods (% < 0%)</td>
+                                        <td class="stat-numeric" id="rollNeg">--</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Total 5Y Rolling Windows Analyzed</td>
+                                        <td class="stat-numeric" id="rollObsCount">--</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab 2: 5-Year Rolling Return Timeline Chart -->
+                <div id="tab-chart" class="tab-pane" role="tabpanel" aria-labelledby="chartTab">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3>5-year rolling CAGR</h3>
+                            <span class="badge badge-info">Annualized return (%)</span>
+                        </div>
+                        <p id="chartStatus" class="chart-status" role="status" hidden></p>
+                        <div class="chart-frame" id="chartFrame">
+                            <canvas id="rollingChartCanvas" role="img" aria-label="Five-year rolling annualized return over time. Summary statistics are in the Returns tab."></canvas>
+                        </div>
+                        <p class="chart-note">
+                            Each point is the annualized return of a five-year holding period ending on that date. The 12% line is a reference hurdle, not a promised return.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Tab 3: Rating Scorecard Breakdown -->
+                <div id="tab-scorecard" class="tab-pane" role="tabpanel" aria-labelledby="scorecardTab">
+                    <div>
+                        <h3 class="scorecard-heading">Where the rating comes from</h3>
+                        <p class="scorecard-intro">
+                            Transparent mathematical model prioritizing 5Y rolling performance across cycles and lower expense ratios (TER).
+                        </p>
+                    </div>
+
+                    <div class="rating-breakdown-grid">
+                        <div class="factor-card">
+                            <div class="factor-title">
+                                <span>5Y Rolling Performance</span>
+                                <span class="badge badge-info">Weight: 3.5</span>
+                            </div>
+                            <div class="factor-score" id="scoreRolling">-- / 3.5</div>
+                            <div class="factor-desc">Evaluates average 5Y rolling CAGR across all historical entry points.</div>
+                        </div>
+
+                        <div class="factor-card">
+                            <div class="factor-title">
+                                <span>Expense Ratio (TER)</span>
+                                <span class="badge badge-info">Weight: 2.0</span>
+                            </div>
+                            <div class="factor-score" id="scoreTer">-- / 2.0</div>
+                            <div class="factor-desc">Higher points for lower expense ratios. Low expenses compound significantly into higher terminal wealth.</div>
+                        </div>
+
+                        <div class="factor-card">
+                            <div class="factor-title">
+                                <span>Consistency & Volatility</span>
+                                <span class="badge badge-info">Weight: 1.5</span>
+                            </div>
+                            <div class="factor-score" id="scoreConsistency">-- / 1.5</div>
+                            <div class="factor-desc">Probability of delivering >12% CAGR hurdle rate, with a lighter penalty for rolling return standard deviation.</div>
+                        </div>
+
+                        <div class="factor-card">
+                            <div class="factor-title">
+                                <span>AUM Scale Factor</span>
+                                <span class="badge badge-info">Weight: 1.0</span>
+                            </div>
+                            <div class="factor-score" id="scoreAum">-- / 1.0</div>
+                            <div class="factor-desc">Lesser weightage factor ensuring fund size liquidity, AMC scale stability, and avoiding liquidation risk.</div>
+                        </div>
+
+                        <div class="factor-card">
+                            <div class="factor-title">
+                                <span>Trailing 5Y Return</span>
+                                <span class="badge badge-info">Weight: 2.0</span>
+                            </div>
+                            <div class="factor-score" id="scoreHistorical">-- / 2.0</div>
+                            <div class="factor-desc">Precalculated 5-year point-to-point trailing CAGR validation from Dhan API.</div>
+                        </div>
+                    </div>
+                </div>
+                <div id="tab-calculator" class="tab-pane" role="tabpanel" aria-labelledby="calculatorTab">
+                    <section class="growth-calculator" id="growthCalculator" aria-labelledby="calculatorTitle">
+                        <div class="calculator-heading">
+                            <h3 id="calculatorTitle">Investment growth calculator</h3>
+                            <p id="investmentFundName"></p>
+                        </div>
+                        <div class="calculator-layout">
+                            <form id="investmentForm" class="calculator-form" novalidate>
+                                <fieldset class="investment-modes">
+                                    <legend>Investment type</legend>
+                                    <div class="investment-mode-options">
+                                        <label>
+                                            <input type="radio" name="type" value="sip" checked>
+                                            <span>Monthly SIP</span>
+                                        </label>
+                                        <label>
+                                            <input type="radio" name="type" value="lump-sum">
+                                            <span>Lump sum</span>
+                                        </label>
+                                    </div>
+                                </fieldset>
+                                <div class="form-group">
+                                    <label class="form-label" id="investmentAmountLabel" for="investmentAmount">Monthly investment (₹)</label>
+                                    <input class="form-input" id="investmentAmount" name="amount" type="number"
+                                        inputmode="decimal" min="0.01" step="0.01" required
+                                        aria-describedby="investmentMinimumNote calculatorError">
+                                    <p id="investmentMinimumNote" class="calculator-field-note"></p>
+                                </div>
+                                <div class="calculator-input-pair">
+                                    <div class="form-group">
+                                        <label class="form-label" for="investmentReturn">Expected annual return (%)</label>
+                                        <input class="form-input" id="investmentReturn" name="annualReturn" type="number"
+                                            inputmode="decimal" step="any" required
+                                            aria-describedby="investmentReturnNote calculatorError">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label" for="investmentYears">Duration (years)</label>
+                                        <input class="form-input" id="investmentYears" name="years" type="number"
+                                            inputmode="numeric" min="1" step="1" value="10" required
+                                            aria-describedby="calculatorError">
+                                    </div>
+                                </div>
+                                <p id="investmentReturnNote" class="calculator-field-note"></p>
+                                <p id="investmentAssumptions" class="calculator-assumptions">SIP assumes equal month-end contributions. Monthly return = annual return ÷ 12.</p>
+                                <p id="calculatorError" class="calculator-error" role="alert" tabindex="-1" hidden></p>
+                                <button class="btn-primary" id="calculateGrowthBtn" type="submit" disabled>Calculate growth</button>
+                            </form>
+                            <div class="calculator-results" id="investmentResults" data-state="empty" role="status" aria-live="polite" aria-atomic="true">
+                                <h4>Your estimate</h4>
+                                <dl class="calculator-breakdown">
+                                    <div class="calculator-future">
+                                        <dt>Estimated future value</dt>
+                                        <dd><output id="investmentFutureValue" for="investmentAmount investmentReturn investmentYears">—</output></dd>
+                                    </div>
+                                    <div>
+                                        <dt>Total invested amount</dt>
+                                        <dd><output id="investmentTotal" for="investmentAmount investmentYears">—</output></dd>
+                                    </div>
+                                    <div>
+                                        <dt>Estimated gains</dt>
+                                        <dd><output id="investmentGains" for="investmentAmount investmentReturn investmentYears">—</output></dd>
+                                    </div>
+                                </dl>
+                                <p class="calculator-result-note" id="investmentResultNote">Select Calculate growth to see your estimate.</p>
+                            </div>
+                        </div>
+                        <p class="calculator-disclaimer">This is a projection for the selected fund, not an actual SIP backtest or a promise of future performance. Assumes a constant return with no withdrawals, SIP increases, taxes, fees or inflation. Zero and negative returns above −100% are supported.</p>
+                    </section>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="modal-footer">
+                <div class="outside-click-hint">
+                    <span id="modalCloseHint">Use Close to exit. Outside clicks and Escape keep this analysis open.</span>
+                </div>
+                <!-- Dedicated Close Button in Footer -->
+                <button id="modalCloseBtnBottom" class="btn-secondary">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast for Outside Click -->
+    <div id="toast" class="toast-msg" role="status" aria-live="polite">
+        <span id="toastText">Modal is locked. Use the Close button to dismiss.</span>
+    </div>
+
+    <!-- Main JavaScript App -->
+    <script src="/static/js/app.js?v=3"></script>
+    <script type="module" src="/static/js/investment-calculator.mjs?v=2"></script>
+</body>
+</html>

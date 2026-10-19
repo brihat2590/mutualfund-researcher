@@ -1,0 +1,17 @@
+{
+  "date": "2026-10-19",
+  "framework": "FastAPI with vanilla HTML, CSS and JavaScript",
+  "sources": {
+    "framework": "pyproject.toml:9",
+    "fonts": "static/css/style.css:1",
+    "palette": "static/css/style.css:3",
+    "spacing": "static/css/style.css:54",
+    "entry": "static/index.html:7"
+  },
+  "fonts": ["Inter", "JetBrains Mono"],
+  "palette": "Dark blue surfaces with blue, emerald, amber, rose, purple and cyan accents",
+  "motion": "CSS transitions and Chart.js; no motion library",
+  "spacing": "Rem-based spacing, no named spacing scale",
+  "preserve": ["Research API", "Fund analysis", "CSV export", "Explicit-close modal", "JetBrains Mono"],
+  "introduce": ["Midnight tokens", "Geist UI typography", "Responsive research workbench", "Keyboard focus and state feedback"]
+}
